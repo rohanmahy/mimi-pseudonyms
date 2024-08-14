@@ -9,20 +9,20 @@ number:
 date:
 consensus: true
 v: 3
-area: ART
-workgroup: MIMI Working Group
+area: "Applications and Real-Time"
+workgroup: "More Instant Messaging Interoperability"
 keyword:
  - metadata privacy
  - pseudonyms
  - pseudonymous
  - selective disclosure
 venue:
-  group: WG
-  type: Working Group
-  mail: WG@example.com
-  arch: https://example.com/WG
-  github: USER/REPO
-  latest: https://example.com/LATEST
+  group: "More Instant Messaging Interoperability"
+  type: "Working Group"
+  mail: "mimi@ietf.org"
+  arch: "https://mailarchive.ietf.org/arch/browse/mimi/"
+  github: "rohanmahy/mimi-pseudonyms"
+  latest: "https://rohanmahy.github.io/mimi-pseudonyms/draft-mahy-mimi-pseudonyms.html"
 
 author:
  -
