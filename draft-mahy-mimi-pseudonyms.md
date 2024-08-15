@@ -37,20 +37,40 @@ informative:
 
 --- abstract
 
-TODO Abstract
+The MIMI protocol has a baseline level of metadata privacy, which can be
+made more private through the optional use of per-room pseudonyms. This
+document describes three of many possible flows that use pseudonyms for
+enhanced privacy. It also discusses some ways that spam and abuse prevention
+mechanisms can work in conjunction with pseudonyms.
 
 
 --- middle
 
 # Introduction
 
-There are several possible ways of using pseudonyms that are compatible with
-the MIMI protocol. This document includes three specific flows. Other flows
-and other metadata privacy mechanisms are possible, some of which also use
-pseudonyms.
+The More Instant Messaging Interoperability (MIMI) protocol
+{{!I-D.ietf-mimi-protocol}} defines a baseline mechanism of metadata privacy
+with the following properties. Each local provider can know which of its
+users are a participant in any given room, and the domain of the hub. The
+hub provider knows the list of participants for each room that it manages.
+Local/follower providers do not learn the identity (or even the domain of)
+participants from other providers as those users send handshakes and
+application messages, unless the provider happens to also be the hub for the
+room.
 
-The flows described here include the a connection flow, an out-of-band join
-link flow, and a knock flow. A very high level summary of each flow follows.
+There is also consensus that user can join rooms using a unique pseudonym
+per room. The MIMI endpoints provided by the hub operate equally well on
+pseudonyms as on "real" identities. However, there are operational
+implications related to authorization, consent, KeyPackage availability,
+credentials, spam/abuse mitigation, and disclosure of the user's "real"
+identity. As a result there are several possible ways of using pseudonyms
+that are compatible with MIMI. This document describes three specific flows.
+Other flows and other metadata privacy mechanisms are possible, some of
+which also use pseudonyms.
+
+The flows described here include a connection-oriented flow, an out-of-band
+join link flow, and a knock flow. A very high level summary of each flow
+follows.
 
 Connection flow:
 
@@ -59,13 +79,17 @@ Connection flow:
 - Alice reveals her actual identity to Bob inside an end-to-end encrypted channel, and provides a second pseudonym
 - Bob connects to Alice from one of his pseudonyms to Alice's second pseudonym.
 
-Since the last step is based on a human delay which could vary from seconds to years, the timing would be difficult to correlate between a pair of providers with a large volume of traffic. If either provider has a very small number of users, either provider could use traffic analysis to associate the second room with Bob.
+Since the last step is based on a human delay which could vary from seconds
+to years, the timing would be difficult to correlate between a pair of
+providers with a large volume of traffic. If either provider has a very
+small number of users, either provider could use traffic analysis to
+associate the second room with Bob.
 
 Out-of-band link flow:
 
 - create a room link
 - distribute the link out-of-band
-- get the groupinfo using the link
+- get the GroupInfo using the link
 - join the room
 - optionally reveal the "real" identity inside the room
 
@@ -78,42 +102,17 @@ and immediately leaves the room
 - later, an administrator of the room decides to add Cathy to the room using
 the KeyPackage provided by Cathy.
 
-This flow is substantially like the connection flow, except that Cathy immediately leaves the "knock room", and the administrator adds Cathy to an existing room (vs. Bob creating a new room).
-
-Note: move down.  knock room allows external joiners write only and maybe autoremoves after a few seconds.
+This flow is substantially similar to the connection flow, except that Cathy
+immediately leaves the "knock room", and the administrator adds Cathy to an
+existing room (vs. Bob creating a new room).
 
 
 # Conventions and Definitions
 
 {::boilerplate bcp14-tagged}
 
-# What is needed
-
-Out of scope:
-
-- A way for clients to obtain pseudonyms from their own providers
-- Rate limiting pseudonym creation on a local provider
-- Correlating pseudonyms with an account on a local provider (may of may not be possible)
-
-In scope:
-
-- A way to indicate a KeyPackage is only valid for initial connections
-- A way for MIMI entities to recognize pseudonyms
-- A way to examine the room policy about pseudonyms (required, optional, forbidden)
-- A way to present additional credentials or disclosures of selective disclosure credentials inside a room
-
-
-## Spam and Abuse prevention
-
-Detection
-
-
-
-Remedy
-
-
-
-
+This document uses MIMI terms defined in {{?I-D.ietf-mimi-arch}} and
+{{!I-D.ietf-mimi-protocol}}, and MLS terms defined in {{!RFC9420}}.
 
 
 # Example flows
@@ -214,14 +213,34 @@ ClientA1       ServerA         ServerB         ClientB*
   |               |               |               |
 ~~~
 
-Alice eventually destroys the bootstrap room after a random delay. (Not shown.)
+Alice eventually destroys the bootstrap room, for example after a random delay (not shown).
 
 Alice and Bob can add each other to additional rooms by sending an
-"invite" application message.
+application message with a join link, as shown in the next flow.
 
+The connection flow may be useful when the sender wants to initially
+establish connectivity but does not have an out-of-band or third-party
+channel to the receiver. On providers with a low volume of flows or when
+relatively few flows use pseudonyms, this flow is vulnerable to timing
+analysis. Between a pair of providers with large volumes of new rooms using
+pseudonyms, this approach can be very effective. This flow has the advantage
+that the initiator can validate the real identity of the receiver before
+establishing any type of communication. This may be useful when contacting
+a known journalist, law-enforcement agent, rights-advocacy group, or ombudsperson.
 
 
 ## Join link flow
+
+The join link flow is useful when two parties meet in person, have another
+communications channel (possibly a different MIMI room), or each is
+introduced via a trusted third-party over separate (typically secure)
+communications channels.
+
+This flow begins with Alice creating a new room from one of her pseudonyms,
+adding her own clients to it, and the creating a join link. Alice needs to
+have permissions to create a join link for this step. Alice then sends the
+join link out-of-band to Bob. This could include showing a QR code to Bob,
+or sending it to a trusted third-party to give to Bob.
 
 ~~~ aasvg
 ClientA1       ServerA         ServerB         ClientB*
@@ -242,9 +261,14 @@ ClientA1       ServerA         ServerB         ClientB*
   |               |               |               |
 ~~~
 
+Once Bob receives the join link, he fetches the GroupInfo for the room
+and validates it, then joins the room.
 
 As in the previous flow, Bob needs to collect KeyPackages from his other
-clients and add them to the room.
+clients and add them to the room (not shown).
+
+Bob can also then reveal his actual identity to the other participants of
+the room in an application message.
 
 ~~~ aasvg
 ClientA1       ServerA         ServerB         ClientB*
@@ -262,11 +286,17 @@ ClientA1       ServerA         ServerB         ClientB*
   |               |       /notify |               |
   | Commit        |<--------------+               |
   |<~~~~~~~~~~~~~~+               |  Message      |
-  |               |       /notify |<~~~~~~~~~~~~~~+
-  | Message       |<--------------+               |
+  |               |               |  Bob real ID  |
+  | Message       |       /notify |<~~~~~~~~~~~~~~+
+  | Bob real ID   |<--------------+               |
   |<~~~~~~~~~~~~~~+               |               |
   |               |               |               |
 ~~~
+
+This powerful flow is only possibly when Alice and Bob have an out-of-band
+channel, and when Alice has permissions to create a join link in the target
+room. Note that if a malicious third-party is used, the parties can still authenticate each other if they disclose their actual identities inside the
+target room, but they would lose any metadata privacy properties they had.
 
 
 ## Knock flow
@@ -277,7 +307,8 @@ related "knock room" which contains the moderators or administrators of the
 target room. The "knock room" can be joined by anyone, but by default each
 joiner can send one message to the admins while regular users never receive application messages sent to the group (although the client has the keying material needed to decrypt the ciphertext if they receive it.)
 
-Cathy sends a message with her KeyPackages for one of her pseudonyms.
+Cathy sends a message with her KeyPackages for one of her pseudonyms. She
+then leaves the "knock room".
 
 ~~~ aasvg
 ClientA1       ServerA         ServerC         ClientC*
@@ -296,9 +327,10 @@ ClientA1       ServerA         ServerC         ClientC*
   |               |       /notify |               |
   | Commit        |<--------------+               |
   |<~~~~~~~~~~~~~~+               | App Message:  |
-  |               |               | Knock, KPs    |
-  |               |       /notify |<~~~~~~~~~~~~~~+
-  | Knock, KPs    |<--------------+               |
+  |               |               | "Knock"       |
+  | App Message:  |               | Real ID, KPs  |
+  | "Knock"       |       /notify |<~~~~~~~~~~~~~~+
+  | Real ID, KPs  |<--------------+               |
   |<~~~~~~~~~~~~~~+               | Remove        |
   |               |               | Proposals     | Cathy removes
   |               |               |<~~~~~~~~~~~~~~+ herself
@@ -323,6 +355,49 @@ ClientA1       ServerA         ServerC         ClientC*
   |               |<--------------+~~~~~~~~~~~~~~>|
   |               |               |               |
 ~~~
+
+This flow is ideal for joining an established affinity group. For example,
+this method could be used by members of marginalized communities. The
+perspective joiner needs to believe that the "knock room" contains only
+moderators who will treat their join request in confidence and not "out"
+them.
+
+
+## Spam and Abuse prevention
+
+Detection
+
+
+Remedy
+
+
+
+
+# What is needed
+
+
+- authorization
+- consent
+- KeyPackage availability
+- credentials
+- spam/abuse mitigation
+- disclosure of the user's "real" identity
+
+
+
+Out of scope:
+
+- A way for clients to obtain pseudonyms from their own providers
+- Rate limiting pseudonym creation on a local provider
+- Correlating pseudonyms with an account on a local provider (may of may not be possible)
+
+In scope:
+
+- A way to indicate a KeyPackage is only valid for initial connections
+- A way for MIMI entities to recognize pseudonyms
+- A way to examine the room policy about pseudonyms (required, optional, forbidden)
+- A way to present additional credentials or disclosures of selective disclosure credentials inside a room
+
 
 
 # Connection request message format
