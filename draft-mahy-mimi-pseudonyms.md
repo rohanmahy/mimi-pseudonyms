@@ -66,7 +66,8 @@ credentials, spam/abuse mitigation, and disclosure of the user's "real"
 identity. As a result there are several possible ways of using pseudonyms
 that are compatible with MIMI. This document describes three specific flows.
 Other flows and other metadata privacy mechanisms are possible, some of
-which also use pseudonyms.
+which also use pseudonyms, for example
+{{?I-D.kohbrok-mimi-metadata-minimalization}}.
 
 The flows described here include a connection-oriented flow, an out-of-band
 join link flow, and a knock flow. A very high level summary of each flow
@@ -112,7 +113,9 @@ existing room (vs. Bob creating a new room).
 {::boilerplate bcp14-tagged}
 
 This document uses MIMI terms defined in {{?I-D.ietf-mimi-arch}} and
-{{!I-D.ietf-mimi-protocol}}, and MLS terms defined in {{!RFC9420}}.
+{{!I-D.ietf-mimi-protocol}}. MIMI uses the Messaging Layer Security (MLS)
+protocol extensively; the document uses several MLS terms defined in
+{{!RFC9420}}.
 
 
 # Example flows
@@ -363,48 +366,172 @@ moderators who will treat their join request in confidence and not "out"
 them.
 
 
-## Spam and Abuse prevention
+# Disclosing additional identity properties in an application message
 
-Detection
+The concept of pseudonyms is of limited utility if the subject of the
+pseudonym cannot disclose additional "real" identity properties as it
+wishes. In the connection flow, Alice reveals her "real" identity only to
+Bob; in the join link flow, Bob reveals aspects of his "real" identity to
+the room; in the knock flow, Cathy reveals aspects of her "real" identity
+to the moderators of her target room, and depending on the policy of the
+target room she might reveal a different aspect of her identity inside the
+target room.
 
+The properties needed for safe and appropriate identity disclosure include:
 
-Remedy
+- The disclosure MUST be consistent with the room policy, which may require
+disclosure of some elements, allow some elements to be optionally disclosed,
+and may even forbid disclosure of other elements. For example, a sexually
+explicit room might require participants to disclose that they are at least a certain age, and forbid the disclosure of postal addresses and family names.
+- The issuer / authority MUST be known to every participant of the room and
+trusted for the purpose of making identity assertions for the domain(s) of
+the provider of the subject user.
+- The signature key of the subject client in its MLS LeafNode MUST be the
+same as the public key in the identity assertion.
+- Whatever identity construction is used MUST be valid according the rules for that construction.
+- The presentation of the identity assertion MUST bind the presentation to
+possession of the identity's private key (key binding).
+- The key binding SHOULD be scoped to a narrow and relevant audience (for
+example the target room), and include other mechanisms to prevent replay/
+copy and paste attacks.
 
-
-
-
-# What is needed
-
-
-- authorization
-- consent
-- KeyPackage availability
-- credentials
-- spam/abuse mitigation
-- disclosure of the user's "real" identity
-
-
-
-Out of scope:
-
-- A way for clients to obtain pseudonyms from their own providers
-- Rate limiting pseudonym creation on a local provider
-- Correlating pseudonyms with an account on a local provider (may of may not be possible)
-
-In scope:
-
-- A way to indicate a KeyPackage is only valid for initial connections
-- A way for MIMI entities to recognize pseudonyms
-- A way to examine the room policy about pseudonyms (required, optional, forbidden)
-- A way to present additional credentials or disclosures of selective disclosure credentials inside a room
-
+This document assumes that these disclosures happen to participants of a
+room inside an application message, directly using an appropriate media type
+(not necessarily inside a MIMI content message).  The next three subsections
+describe three such mechanisms.
 
 
-# Connection request message format
+## Generic MLS Credential
 
-TODO
+MIMI describes its use with the MLS protocol {{!RFC9420}}.
+If a new media type `application/mls-credential` was defined, clients could
+send the MLS Credential struct (possibly with the credential name as a media type parameter.) The MLS struct is reproduced here:
 
-Invite format
+~~~ tls
+struct {
+    CredentialType credential_type;
+    select (Credential.credential_type) {
+        case basic:
+            opaque identity<V>;
+
+        case x509:
+            Certificate certificates<V>;
+    };
+} Credential;
+~~~
+
+For example, the client's MLS LeafNode could contain an MLS Credential with
+an X.509 certificate with a `subjectAltName` URI that corresponds to the
+pseudonym address of the client. The client could then disclose to the room
+a different X.509 certificate with the same issuer and public key which also
+reveals the "real" display name, and email address of the user.
+
+OpenID Connect UserInfo Verifiable Credentials (VCs) are another proposed
+MLS Credential type {{?I-D.barnes-mls-addl-creds}} with more natural claims
+semantics.
+
+## Selective Disclosure JSON Web Tokens
+
+While the use of JSON Web Tokens (JWT) {{?RFC7519}} is widespread, most
+uses do not require the holder/presenter to prove possession of a private
+key as in {{?RFC9449}}. Selective disclosure JWT (SD-JWT)
+{{!I-D.ietf-oauth-selective-disclosure-jwt}} describes both a way to
+selectively disclose claims, it also include an optional presenter key
+binding mechanism. The format uses the media type `application/sd+jwt`.
+
+This format could be used directly in MIMI with an appropriate profile.
+
+## Selective Disclosure CBOR Web Tokens
+
+Likewise, there are Selective Disclosure CBOR Web Tokens (SD-CWT)
+{{!I-D.prorock-spice-cose-sd-cwt}}. SD-CWT uses the media type
+`application/sd+cwt`, and requires the use of its key binding
+mechanism in presentations.
+
+
+# Spam and Abuse prevention
+
+MIMI has a requirement to be able to prevent spam and other forms of abuse.
+When using pseudonymous identities, there is naturally concern that an
+account with many pseudonyms could be used to violate room policy in the
+same room repeatedly or in multiple rooms with impunity. This section
+explores some implementation options to prevent this.
+
+In a multi-provider messaging system, the hub provider is the only provider that knows the room policy and therefore the only provider that can decide if the policy is being violated. The local provider will need to eventually cooperate with the hub provider in order to prevent the same bad actor from
+violating policy repeatedly with different pseudonyms.
+
+
+## Detection signals
+
+There are several signals used for detection of spam or abuse.
+In theory, an explicit abuse report should be a very strong signal of abuse.
+However, an abuse report could be sent accidentally; it could be the result
+of a misunderstanding about the policy in a room; or it could have been sent
+maliciously. A report might be incorrectly processed by an algorithm, or it
+might need to wait for a human moderator to process it.
+
+A ban or kick by a moderator or administrator of a group could also be a strong signal, but an administrator might maliciously act against someone
+they disagree with rather than someone who actually violated policy. Since
+the motivation for the ban or kick is not shared with the hub, the claim is
+also impossible to validate.
+
+The hub may also use the rate or pattern of joining groups or sending
+messages for one of its own users as an indicator of how spammy that user
+is, but for users based on other providers it has no way to correlate that
+information across pseudonyms.
+
+
+## Remedies
+
+Once the hub suspects that a user has violated its policies, it has a number
+of possible remedies. Some of these remedies require cooperation with the
+local provider of that user.
+
+Actions the hub can take independently:
+
+- prevent the user from sending messages in a room
+- remove the user from a room (kick)
+- ban the user from a room (temporarily)
+- ban the user from a room (permanently)
+
+Actions requiring cooperation of the user's local provider
+
+- suspend the account of the user
+- suspend the account of the user and remove the user (including all pseudonyms) from all rooms
+- completely delete the account of the user
+- suspend the account and any accounts deemed "related" (ex: used the same email address or phone number)
+- delete the account and any "related" accounts
+
+Specifying an interface for reporting suspected abusive identities from
+one provider to another is currently out-of-scope of the MIMI charter and
+likely to be defined between providers or by a more focussed standards
+developing organization, such as the Messaging Anti-Abuse Working Group
+(M3AAWG).
+
+
+## Correlating anti-abuse actions across multiple pseudonyms
+
+It is possible that the local provider for a user can lookup the
+account associated with a specific user identity. This may be
+straightforward, or the provider might implement a scheme where this lookup
+is possible but requires extra technical or operational steps and leaves
+evidence of the inquiry. This would be the moral equivalent of breaking the
+pane of glass in some manual fire alarms.
+
+In other implementations, perhaps no direct lookup is possible during normal
+operation of the system, but an API could suspend of delete the account
+associated with a particular pseudonym.
+
+For some providers it may be operationally acceptable that only a small
+number of pseudonyms can be created for a particular account.
+
+There are also mechanisms such as searchable encryption and homomorphic
+encryption, which allow searching for all the pseudonyms with the same
+account id with a combined spam factor over a certain threshold.
+Alternatively, a provider may use similar encryption mechanisms but require
+a positive reputation threshold in order to allow new pseudonyms to be
+created.
+
 
 # Implications with explicit consent mechanism
 
@@ -414,6 +541,33 @@ months and most new rendezvous will be realized during that time. However if
 a KeyPackage expires, the other party may need explicit consent to fetch a
 new KeyPackage to replace the expired one.
 
+
+# Other mechanism needed
+
+This document describes some flows for effective, selectively
+pseudonymous privacy. Use in a MIMI system requires a small amount
+of additional specification and implementation. The author has attempted to
+list this items according to whether they are in-scope according to the MIMI
+charter.
+
+Out of scope:
+
+- A way for clients to obtain pseudonyms from their own providers
+- Rate limiting pseudonym creation on a local provider
+- Correlating pseudonyms with an account on a local provider (may or may not be possible or necessary)
+- A way for a client to obtain a join link from its provider
+
+Assumed in scope:
+
+- A way to indicate a KeyPackage is only valid for initial connections
+- A way for MIMI entities to recognize pseudonyms
+- A way to examine the room policy about pseudonyms (required, optional,
+forbidden), and if certain claims/elements are required, optional, or
+forbidden.
+- A format or convention to wrap additional credentials, or disclosures of
+selective disclosure credentials inside a room, along with KeyPackages, etc.
+- Conventions for use of existing authorization and consent primitives
+- Conventions to make KeyPackages available appropriately
 
 
 # Security Considerations
