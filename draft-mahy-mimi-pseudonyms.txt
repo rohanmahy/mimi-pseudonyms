@@ -4,8 +4,8 @@
 
 More Instant Messaging Interoperability                          R. Mahy
 Internet-Draft                            Rohan Mahy Consulting Services
-Intended status: Informational                            19 August 2024
-Expires: 20 February 2025
+Intended status: Informational                           3 February 2025
+Expires: 7 August 2025
 
 
        Some pseudonymous privacy flows for More Instant Messaging
@@ -53,11 +53,11 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 20 February 2025.
+   This Internet-Draft will expire on 7 August 2025.
 
 Copyright Notice
 
-   Copyright (c) 2024 IETF Trust and the persons identified as the
+   Copyright (c) 2025 IETF Trust and the persons identified as the
    document authors.  All rights reserved.
 
    This document is subject to BCP 78 and the IETF Trust's Legal
@@ -676,16 +676,16 @@ Table of Contents
               Barnes, R., Hodgson, M., Kohbrok, K., Mahy, R., Ralston,
               T., and R. Robert, "More Instant Messaging
               Interoperability (MIMI) using HTTPS and MLS", Work in
-              Progress, Internet-Draft, draft-ietf-mimi-protocol-01, 8
-              July 2024, <https://datatracker.ietf.org/doc/html/draft-
-              ietf-mimi-protocol-01>.
+              Progress, Internet-Draft, draft-ietf-mimi-protocol-02, 21
+              October 2024, <https://datatracker.ietf.org/doc/html/
+              draft-ietf-mimi-protocol-02>.
 
    [I-D.ietf-oauth-selective-disclosure-jwt]
               Fett, D., Yasuda, K., and B. Campbell, "Selective
               Disclosure for JWTs (SD-JWT)", Work in Progress, Internet-
-              Draft, draft-ietf-oauth-selective-disclosure-jwt-10, 8
-              July 2024, <https://datatracker.ietf.org/doc/html/draft-
-              ietf-oauth-selective-disclosure-jwt-10>.
+              Draft, draft-ietf-oauth-selective-disclosure-jwt-15, 16
+              January 2025, <https://datatracker.ietf.org/doc/html/
+              draft-ietf-oauth-selective-disclosure-jwt-15>.
 
    [I-D.prorock-spice-cose-sd-cwt]
               Prorock, M., Steele, O., and H. Birkholz, "Selective
@@ -720,16 +720,16 @@ Table of Contents
    [I-D.ietf-mimi-arch]
               Barnes, R., "An Architecture for More Instant Messaging
               Interoperability (MIMI)", Work in Progress, Internet-
-              Draft, draft-ietf-mimi-arch-00, 2 April 2024,
+              Draft, draft-ietf-mimi-arch-01, 21 November 2024,
               <https://datatracker.ietf.org/doc/html/draft-ietf-mimi-
-              arch-00>.
+              arch-01>.
 
    [I-D.kohbrok-mimi-metadata-minimalization]
               Kohbrok, K. and R. Robert, "MIMI Metadata Minimalization
               (MIMIMI)", Work in Progress, Internet-Draft, draft-
-              kohbrok-mimi-metadata-minimalization-00, 5 April 2024,
+              kohbrok-mimi-metadata-minimalization-01, 6 October 2024,
               <https://datatracker.ietf.org/doc/html/draft-kohbrok-mimi-
-              metadata-minimalization-00>.
+              metadata-minimalization-01>.
 
    [RFC7519]  Jones, M., Bradley, J., and N. Sakimura, "JSON Web Token
               (JWT)", RFC 7519, DOI 10.17487/RFC7519, May 2015,
